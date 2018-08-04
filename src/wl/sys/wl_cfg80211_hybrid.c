@@ -2393,8 +2393,11 @@ wl_bss_connect_done(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 	s32 err = 0;
 
 	if (wl->scan_request) {
+                struct cfg80211_scan_info info = {
+                        .aborted = true,
+                };
 		WL_DBG(("%s: Aborting scan\n", __FUNCTION__));
-		cfg80211_scan_done(wl->scan_request, true);     
+		cfg80211_scan_done(wl->scan_request, &info);     
 		wl->scan_request = NULL;
 	}
 
@@ -2495,7 +2498,10 @@ wl_notify_scan_status(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 
 scan_done_out:
 	if (wl->scan_request) {
-		cfg80211_scan_done(wl->scan_request, false);
+                struct cfg80211_scan_info info = {
+                        .aborted = false,
+                };
+		cfg80211_scan_done(wl->scan_request, &info);
 		wl->scan_request = NULL;
 	}
 	rtnl_unlock();
@@ -2920,7 +2926,10 @@ s32 wl_cfg80211_down(struct net_device *ndev)
 	s32 err = 0;
 
 	if (wl->scan_request) {
-		cfg80211_scan_done(wl->scan_request, true);	
+                struct cfg80211_scan_info info = {
+                        .aborted = true,
+                };
+		cfg80211_scan_done(wl->scan_request, &info);	
 		wl->scan_request = NULL;
 	}
 
