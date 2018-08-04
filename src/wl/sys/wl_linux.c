@@ -117,6 +117,7 @@ int wl_found = 0;
 
 typedef struct priv_link {
 	wl_if_t *wlif;
+        unsigned long last_rx;
 } priv_link_t;
 
 #define WL_DEV_IF(dev)          ((wl_if_t*)((priv_link_t*)DEV_PRIV(dev))->wlif)
@@ -2165,8 +2166,8 @@ wl_start(struct sk_buff *skb, struct net_device *dev)
 	wlif = WL_DEV_IF(dev);
 	wl = WL_INFO(dev);
 
+	skb->prev = NULL;
 	if (WL_ALL_PASSIVE_ENAB(wl) || (WL_RTR() && WL_CONFIG_SMP())) {
-		skb->prev = NULL;
 
 		TXQ_LOCK(wl);
 
@@ -2449,6 +2450,7 @@ wl_monitor(wl_info_t *wl, wl_rxsts_t *rxsts, void *p)
 {
 	struct sk_buff *oskb = (struct sk_buff *)p;
 	struct sk_buff *skb;
+        priv_link_t *priv_link;
 	uchar *pdata;
 	uint len;
 
@@ -2915,7 +2917,10 @@ wl_monitor(wl_info_t *wl, wl_rxsts_t *rxsts, void *p)
 	if (skb == NULL) return;
 
 	skb->dev = wl->monitor_dev;
-	skb->dev->last_rx = jiffies;
+        priv_link = MALLOC(wl->osh, sizeof(priv_link_t));
+        priv_link = netdev_priv(skb->dev);
+        priv_link->last_rx = jiffies;
+	//skb->dev->last_rx = jiffies;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 	skb_reset_mac_header(skb);
 #else

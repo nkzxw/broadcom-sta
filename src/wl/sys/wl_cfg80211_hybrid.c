@@ -236,7 +236,7 @@ static s8 wl_dbg_estr[][WL_DBG_ESTR_MAX] = {
 #endif				
 
 #define CHAN2G(_channel, _freq, _flags) {			\
-	.band			= IEEE80211_BAND_2GHZ,		\
+	.band			= NL80211_BAND_2GHZ,		\
 	.center_freq		= (_freq),			\
 	.hw_value		= (_channel),			\
 	.flags			= (_flags),			\
@@ -245,7 +245,7 @@ static s8 wl_dbg_estr[][WL_DBG_ESTR_MAX] = {
 }
 
 #define CHAN5G(_channel, _flags) {				\
-	.band			= IEEE80211_BAND_5GHZ,		\
+	.band			= NL80211_BAND_5GHZ,		\
 	.center_freq		= 5000 + (5 * (_channel)),	\
 	.hw_value		= (_channel),			\
 	.flags			= (_flags),			\
@@ -379,7 +379,7 @@ static struct ieee80211_channel __wl_5ghz_n_channels[] = {
 };
 
 static struct ieee80211_supported_band __wl_band_2ghz = {
-	.band = IEEE80211_BAND_2GHZ,
+	.band = NL80211_BAND_2GHZ,
 	.channels = __wl_2ghz_channels,
 	.n_channels = ARRAY_SIZE(__wl_2ghz_channels),
 	.bitrates = wl_g_rates,
@@ -387,7 +387,7 @@ static struct ieee80211_supported_band __wl_band_2ghz = {
 };
 
 static struct ieee80211_supported_band __wl_band_5ghz_a = {
-	.band = IEEE80211_BAND_5GHZ,
+	.band = NL80211_BAND_5GHZ,
 	.channels = __wl_5ghz_a_channels,
 	.n_channels = ARRAY_SIZE(__wl_5ghz_a_channels),
 	.bitrates = wl_a_rates,
@@ -395,7 +395,7 @@ static struct ieee80211_supported_band __wl_band_5ghz_a = {
 };
 
 static struct ieee80211_supported_band __wl_band_5ghz_n = {
-	.band = IEEE80211_BAND_5GHZ,
+	.band = NL80211_BAND_5GHZ,
 	.channels = __wl_5ghz_n_channels,
 	.n_channels = ARRAY_SIZE(__wl_5ghz_n_channels),
 	.bitrates = wl_a_rates,
@@ -1454,7 +1454,7 @@ wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 		WL_DBG(("Could not get rate (%d)\n", err));
 	} else {
 		rate = dtoh32(rate);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 #else
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
@@ -1471,7 +1471,7 @@ wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
 			return err;
 		}
 		rssi = dtoh32(scb_val.val);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #else
 		sinfo->filled |= STATION_INFO_SIGNAL;
@@ -1822,7 +1822,7 @@ static struct cfg80211_ops wl_cfg80211_ops = {
 
 #ifdef CONFIG_PM
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 static const struct wiphy_wowlan_support wl_wowlan_support = {
 #else
 static struct wiphy_wowlan_support wl_wowlan_support = {
@@ -1876,8 +1876,8 @@ static s32 wl_alloc_wdev(struct device *dev, struct wireless_dev **rwdev)
 	wdev->wiphy->max_num_pmkids = WL_NUM_PMKIDS_MAX;
 #endif
 	wdev->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_ADHOC);
-	wdev->wiphy->bands[IEEE80211_BAND_2GHZ] = &__wl_band_2ghz;
-	wdev->wiphy->bands[IEEE80211_BAND_5GHZ] = &__wl_band_5ghz_a; 
+	wdev->wiphy->bands[NL80211_BAND_2GHZ] = &__wl_band_2ghz;
+	wdev->wiphy->bands[NL80211_BAND_5GHZ] = &__wl_band_5ghz_a; 
 	wdev->wiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	wdev->wiphy->cipher_suites = __wl_cipher_suites;
 	wdev->wiphy->n_cipher_suites = ARRAY_SIZE(__wl_cipher_suites);
@@ -1888,7 +1888,7 @@ static s32 wl_alloc_wdev(struct device *dev, struct wireless_dev **rwdev)
 
 #ifdef CONFIG_PM
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 	wdev->wiphy->wowlan = &wl_wowlan_support;
 #else
 	wdev->wiphy->wowlan = wl_wowlan_support;
@@ -2000,7 +2000,7 @@ static s32 wl_inform_single_bss(struct wl_cfg80211_priv *wl, struct wl_bss_info 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
 	freq = ieee80211_channel_to_frequency(notif_bss_info->channel,
 		(notif_bss_info->channel <= CH_MAX_2G_CHANNEL) ?
-		IEEE80211_BAND_2GHZ : IEEE80211_BAND_5GHZ);
+		NL80211_BAND_2GHZ : NL80211_BAND_5GHZ);
 #else
 	freq = ieee80211_channel_to_frequency(notif_bss_info->channel);
 #endif
@@ -2031,7 +2031,7 @@ static s32 wl_inform_single_bss(struct wl_cfg80211_priv *wl, struct wl_bss_info 
 
 	notify_ie = (u8 *)bi + le16_to_cpu(bi->ie_offset);
 	notify_ielen = le32_to_cpu(bi->ie_length);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
 	cbss = cfg80211_inform_bss(wiphy, channel, (const u8 *)(bi->BSSID.octet),
 		0, beacon_proberesp->capab_info, beacon_proberesp->beacon_int,
 		(const u8 *)notify_ie, notify_ielen, signal, GFP_KERNEL);
@@ -2063,7 +2063,7 @@ wl_notify_connect_status(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 	u32 event = EVENT_TYPE(e);
 	u16 flags = EVENT_FLAGS(e);
 	u32 status = EVENT_STATUS(e);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 	struct ieee80211_channel *channel = NULL;
 	struct wiphy *wiphy;
 	u32 chanspec, chan;
@@ -2080,7 +2080,7 @@ wl_notify_connect_status(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 		}
 		else if ((event == WLC_E_LINK && ~(flags & WLC_EVENT_MSG_LINK)) ||
 			event == WLC_E_DEAUTH_IND || event == WLC_E_DISASSOC_IND) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0)
 			cfg80211_disconnected(ndev, 0, NULL, 0, GFP_KERNEL);
 #else
 			cfg80211_disconnected(ndev, 0, NULL, 0, false, GFP_KERNEL);
@@ -2108,7 +2108,7 @@ wl_notify_connect_status(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 			wl_get_assoc_ies(wl);
 			memcpy(&wl->bssid, &e->addr, ETHER_ADDR_LEN);
 			wl_update_bss_info(wl);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 			wiphy = wl_to_wiphy(wl);
 			err = wl_dev_intvar_get(ndev, "chanspec", &chanspec);
 			if (err) {
@@ -2116,7 +2116,7 @@ wl_notify_connect_status(struct wl_cfg80211_priv *wl, struct net_device *ndev,
 				return err;
 			}
 			chan = wf_chspec_ctlchan(chanspec);
-			band = (chan <= CH_MAX_2G_CHANNEL) ? IEEE80211_BAND_2GHZ : IEEE80211_BAND_5GHZ;
+			band = (chan <= CH_MAX_2G_CHANNEL) ? NL80211_BAND_2GHZ : NL80211_BAND_5GHZ;
 			freq = ieee80211_channel_to_frequency(chan, band);
 			channel = ieee80211_get_channel(wiphy, freq);
 			cfg80211_ibss_joined(ndev, (u8 *)&wl->bssid, channel, GFP_KERNEL);
@@ -2250,10 +2250,10 @@ static void wl_ch_to_chanspec(struct ieee80211_channel *chan, struct wl_join_par
 		join_params->params.chanspec_list[0] =
 		    ieee80211_frequency_to_channel(chan->center_freq);
 
-		if (chan->band == IEEE80211_BAND_2GHZ) {
+		if (chan->band == NL80211_BAND_2GHZ) {
 			chanspec |= WL_CHANSPEC_BAND_2G;
 		}
-		else if (chan->band == IEEE80211_BAND_5GHZ) {
+		else if (chan->band == NL80211_BAND_5GHZ) {
 			chanspec |= WL_CHANSPEC_BAND_5G;
 		}
 		else {
@@ -2358,19 +2358,26 @@ wl_bss_roaming_done(struct wl_cfg80211_priv *wl, struct net_device *ndev,
                     const wl_event_msg_t *e, void *data)
 {
 	struct wl_cfg80211_connect_info *conn_info = wl_to_conn(wl);
+        struct cfg80211_bss *bss;
+        struct wlc_ssid *ssid;
+        ssid = &wl->profile->ssid;
+        bss = cfg80211_get_bss(wl_to_wiphy(wl), NULL, (s8 *)&wl->bssid,
+        ssid->SSID, ssid->SSID_len, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
+        struct cfg80211_roam_info roam_info = {
+                .bss = bss,
+                .req_ie = conn_info->req_ie,
+                .req_ie_len = conn_info->req_ie_len,
+                .resp_ie = conn_info->resp_ie,
+                .resp_ie_len = conn_info->resp_ie_len,
+        };
+
 	s32 err = 0;
 
 	wl_get_assoc_ies(wl);
 	memcpy(wl->profile->bssid, &e->addr, ETHER_ADDR_LEN);
 	memcpy(&wl->bssid, &e->addr, ETHER_ADDR_LEN);
 	wl_update_bss_info(wl);
-	cfg80211_roamed(ndev,
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39)
-			&wl->conf->channel,	 
-#endif
-			(u8 *)&wl->bssid,
-			conn_info->req_ie, conn_info->req_ie_len,
-			conn_info->resp_ie, conn_info->resp_ie_len, GFP_KERNEL);
+	cfg80211_roamed(ndev, &roam_info, GFP_KERNEL);
 	WL_DBG(("Report roaming result\n"));
 
 	set_bit(WL_STATUS_CONNECTED, &wl->status);
@@ -2857,7 +2864,7 @@ static void wl_update_wowl(struct net_device *ndev)
 		WL_INF(("No offloads supported\n"));
 		wl->offloads = false;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 		wdev->wiphy->wowlan = NULL;
 #else
 		memset(&wdev->wiphy->wowlan, 0, sizeof(struct wiphy_wowlan_support));
@@ -2885,7 +2892,7 @@ static s32 wl_update_wiphybands(struct wl_cfg80211_priv *wl)
 
 	if (phy == 'n' || phy == 'a' || phy == 'v') {
 		wiphy = wl_to_wiphy(wl);
-		wiphy->bands[IEEE80211_BAND_5GHZ] = &__wl_band_5ghz_n;
+		wiphy->bands[NL80211_BAND_5GHZ] = &__wl_band_5ghz_n;
 	}
 
 	return err;
