@@ -50,7 +50,7 @@ u32 wl_dbg_level = WL_DBG_ERR;
 #endif
 
 static s32 wl_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
-           enum nl80211_iftype type, u32 *flags, struct vif_params *params);
+           enum nl80211_iftype type, struct vif_params *params);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
 static s32
 wl_cfg80211_scan(struct wiphy *wiphy,
@@ -64,13 +64,8 @@ static s32 wl_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *dev,
            struct cfg80211_ibss_params *params);
 static s32 wl_cfg80211_leave_ibss(struct wiphy *wiphy, struct net_device *dev);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
-static s32 wl_cfg80211_get_station(struct wiphy *wiphy,
-           struct net_device *dev, u8 *mac, struct station_info *sinfo);
-#else
 static s32 wl_cfg80211_get_station(struct wiphy *wiphy,
            struct net_device *dev, const u8 *mac, struct station_info *sinfo);
-#endif
 
 static s32 wl_cfg80211_set_power_mgmt(struct wiphy *wiphy,
            struct net_device *dev, bool enabled, s32 timeout);
@@ -463,7 +458,7 @@ wl_dev_ioctl(struct net_device *dev, u32 cmd, void *arg, u32 len)
 
 static s32
 wl_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
-                         enum nl80211_iftype type, u32 *flags,
+                         enum nl80211_iftype type, 
    struct vif_params *params)
 {
 	struct wl_cfg80211_priv *wl = wiphy_to_wl(wiphy);
@@ -1428,15 +1423,9 @@ wl_cfg80211_get_key(struct wiphy *wiphy, struct net_device *dev,
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
-static s32
-wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
-                        u8 *mac, struct station_info *sinfo)
-#else
 static s32
 wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
                         const u8 *mac, struct station_info *sinfo)
-#endif
 {
 	struct wl_cfg80211_priv *wl = wiphy_to_wl(wiphy);
 	scb_val_t scb_val;
@@ -2358,20 +2347,17 @@ wl_bss_roaming_done(struct wl_cfg80211_priv *wl, struct net_device *ndev,
                     const wl_event_msg_t *e, void *data)
 {
 	struct wl_cfg80211_connect_info *conn_info = wl_to_conn(wl);
-        struct cfg80211_bss *bss;
         struct wlc_ssid *ssid;
-        ssid = &wl->profile->ssid;
-        bss = cfg80211_get_bss(wl_to_wiphy(wl), NULL, (s8 *)&wl->bssid,
-        ssid->SSID, ssid->SSID_len, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
+        s32 err = 0;
         struct cfg80211_roam_info roam_info = {
-                .bss = bss,
                 .req_ie = conn_info->req_ie,
                 .req_ie_len = conn_info->req_ie_len,
                 .resp_ie = conn_info->resp_ie,
                 .resp_ie_len = conn_info->resp_ie_len,
         };
-
-	s32 err = 0;
+        ssid = &wl->profile->ssid;
+        roam_info.bss = cfg80211_get_bss(wl_to_wiphy(wl), NULL, (s8 *)&wl->bssid,
+        ssid->SSID, ssid->SSID_len, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
 
 	wl_get_assoc_ies(wl);
 	memcpy(wl->profile->bssid, &e->addr, ETHER_ADDR_LEN);
